@@ -1,0 +1,205 @@
+---
+title: "JW_R_Project"
+author: "Jamie Wandzilak"
+date: "April 20, 2019"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(knitr)
+library(tidyverse)
+library(data.table)
+
+fed_r_d_spending <- read.csv("fed_r_d_spending.csv")
+climate_spending <- read.csv("climate_spending.csv")
+energy_spending <- read.csv("energy_spending.csv")
+
+```
+
+
+
+#Figure 1
+Comparison of research spending on 3 types of energy from 1997 to 2018.
+
+
+```{r}
+renewable_energy = filter(energy_spending, department == 'Energy Efficiency and Renew Energy')
+
+fossil_energy = filter(energy_spending, department == 'Fossil Energy')
+
+nuclear_energy = filter(energy_spending, department == 'Nuclear Energy')
+
+total_energy <- rbind(renewable_energy, fossil_energy, nuclear_energy)
+  
+
+
+ggplot(total_energy, aes(x = year, y = energy_spending, color = department)) +  
+  scale_x_continuous(breaks = seq(min(total_energy$year), max(total_energy$year),3)) +
+  scale_color_viridis_d() + geom_point() + geom_smooth(method="lm")
+
+
+```
+
+##Types of Energy
+
+When looking at research spending of energy types it is important to look at how spending has changed over time. Energy spending for fossil fuels has remained relatively even over the past 22 years. Research spending for both nuclear energy and for energy efficiency/renewable energy has shown trends of increasing over the last 22 years.  
+
+
+
+#Figure 2 
+Research and development budget for the NSF and NIH over 20 years 
+
+```{r}
+
+budget_sum <- select(fed_r_d_spending, department, year, rd_budget) 
+
+
+NSF <- filter(budget_sum, department == 'NSF')
+
+NIH <- filter(budget_sum, department == 'NIH')
+
+NIH_NSF <- rbind(NIH, NSF)
+
+NSF.mod <- lm(year ~ rd_budget, data = NSF)
+NSF_r2 <- summary(NSF.mod)$r.squared
+
+NIH.mod <- lm(year ~ rd_budget, data = NIH)
+NIH_r2 <- summary(NIH.mod)$r.squared
+
+
+ggplot(NIH_NSF, aes(x = year, y = rd_budget, color = department)) + 
+  scale_x_continuous(breaks = seq(min(NIH_NSF$year), max(NIH_NSF$year),5)) +
+  scale_color_viridis_d() + geom_point() + geom_smooth(method="lm")
+
+
+```
+
+
+##NSF vs NIH
+
+The NSF and the NIH are two of the biggest funding providers for science research. Both departments have experienced upward trends in research and development spending over the time frame of this data set. This trend seems to be more variable for NIH with an r-squared value of `r NIH_r2 ` and less variable for NSF with an r-squared value of `r NSF_r2`.
+
+
+
+#Figure 3 
+Comparing research and development budgets of science based deparatments with the research spending of the Department of Defense.  
+
+```{r}
+EPA <- filter(budget_sum, department == ('EPA'))
+
+NASA <- filter(budget_sum, department == ('NASA'))
+
+DOD <- filter(budget_sum, department == ('DOD'))
+
+science_spending <- rbind(NIH, NSF, EPA, NASA, DOD)
+
+DOD.mod <- lm(year ~ rd_budget, data = DOD)
+DOD_r2 <- summary(DOD.mod)$r.squared
+
+
+ggplot(science_spending, aes(x = year, y = rd_budget, color = department)) + 
+  scale_x_continuous(breaks = seq(min(science_spending$year),  max(science_spending$year),5)) +  scale_color_viridis_d() +
+  geom_point() + geom_smooth(method="lm")
+
+```
+
+
+## Department of Defense vs Science Departments 
+
+The department of defense has the highest budget for research and development across all the U.S. government departments examined in this data set, however it is also the most variable with an r-squared value of `r DOD_r2`. This figure specifically looks at how much higher the DOD budget is than all of the science research departments' budgets over about a 30 year period.    
+
+
+
+# Figure 4 
+
+Changes in federal spending across departments during the years of George W. Bush's presidency 
+
+```{r}
+bush_budget <- fed_r_d_spending %>%
+  filter(year > 2000, year < 2010) %>%
+  select(year, department, rd_budget)
+
+
+bush_DOD <- filter(bush_budget, department == ('DOD'))
+
+bush_DOD.mod <- lm(year ~ rd_budget, data = bush_DOD)
+bush_DOD_r2 <- summary(bush_DOD.mod)$r.squared
+
+ggplot(bush_budget, aes(x = year, y = rd_budget, color = department)) +
+    scale_x_continuous(breaks = seq(min(bush_budget$year),  max(bush_budget$year),1)) +  scale_color_discrete() +
+  geom_point() + geom_smooth(method="lm")
+ 
+
+```
+
+## Spending During Bush's Presidency
+
+When looking at federal spending it is important to look at changes that take place within the governing body. During the years of George W. Bush's presidency spending remains fairly constant for all departments besides the department of defense (DOD). In the 8 years of Bush's presidency there was a trend of increased spending for the research and development budget of the DOD supported by an r-squared value of `r bush_DOD_r2`. This trend was likely due to world events that influenced increased investment into the department of defense.    
+
+
+
+
+# Figure 5
+
+Changes in federal spending across departments during the years of Barack Obama's presidency 
+```{r}
+obama_budget <- fed_r_d_spending %>%
+  filter(year > 2009) %>%
+  select(year, department, rd_budget)
+
+
+obama_DOD <- filter(obama_budget, department == ('DOD'))
+obama_DOD.mod <- lm(year ~ rd_budget, data = obama_DOD)
+obama_DOD_r2 <- summary(obama_DOD.mod)$r.squared
+
+ggplot(obama_budget, aes(x = year, y = rd_budget, color = department)) + 
+   scale_x_continuous(breaks = seq(min(obama_budget$year),  max(obama_budget$year),1)) +  scale_color_discrete() +
+  geom_point() + geom_smooth(method="lm")
+  
+
+```
+
+## Spending During Obama's Presidency
+
+Now comparing to Figure 5 we can look at federal spending during the years of Barack Obama's presidency. Again, spending remains fairly constant for all departments besides the department of defense (DOD). In the 8 years of Obama's presidency there was a treand of decreased spending for the research and development budget of the DOD supported by an r-squared value of `r obama_DOD_r2`. This trend was likely due to the change in governing officals and changes in world events during this time period.   
+
+
+# Figure 6
+
+Comparing total DOD budgets between the Bush presidency and the Obama presidency 
+
+```{r}
+bush_DOD <- filter(bush_budget, department == ('DOD'))
+
+obama_DOD <- filter(obama_budget, department == ('DOD'))
+
+obama_sum_DOD = sum(obama_DOD$rd_budget)
+
+
+bush_sum_DOD = sum(bush_DOD$rd_budget)
+
+
+
+bush_obama <- data.table(President = c("Bush", "Obama"), Total_DOD_Spending = c(bush_sum_DOD, obama_sum_DOD))
+
+ggplot(bush_obama, aes(x = President, y = Total_DOD_Spending)) + 
+  geom_col() 
+```
+
+##Total DOD spending across presidencies 
+
+Figure 5 and Figure 6 show the main trends of DOD spending, but due to the variation it is important to also look at total spending across presidential terms. This figure supports that the total amount spent on the DOD budget during Bush's presidency was higher than the total amount spent during Obama's presidency with values of `r bush_sum_DOD` and `r obama_sum_DOD` respectively. 
+
+
+
+
+
+
+
+
+
